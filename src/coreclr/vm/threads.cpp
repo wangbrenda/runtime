@@ -898,6 +898,8 @@ void DestroyThread(Thread *th)
 
     GCX_PREEMP_NO_DTOR();
 
+    th->UnbindAllocator();
+
     if (th->IsAbortRequested()) {
         // Reset trapping count.
         th->UnmarkThreadForAbort(Thread::TAR_ALL);
@@ -1604,6 +1606,8 @@ Thread::Thread()
 #ifdef _DEBUG
     memset(dangerousObjRefs, 0, sizeof(dangerousObjRefs));
 #endif // _DEBUG
+
+    BindAllocator();
 }
 
 //--------------------------------------------------------------------
@@ -1941,6 +1945,26 @@ FAILURE:
     }
 
     return res;
+}
+
+VOID Thread::BindAllocator()
+{
+    CONTRACTL {
+        NOTHROW;
+        DISABLED(GC_NOTRIGGER);
+    }
+    CONTRACTL_END;
+    m_alloc_context.bind(GCHeapUtilities::GetGCHeap()->BindThread(this));
+}
+
+VOID Thread::UnbindAllocator()
+{
+    CONTRACTL {
+        NOTHROW;
+        DISABLED(GC_NOTRIGGER);
+    }
+    CONTRACTL_END;
+    GCHeapUtilities::GetGCHeap()->UnbindThread(m_alloc_context.unbind());
 }
 
 BOOL Thread::AllocateIOCompletionContext()

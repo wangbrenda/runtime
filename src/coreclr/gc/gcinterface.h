@@ -110,6 +110,8 @@ struct WriteBarrierParameters
     uint8_t* write_watch_table;
 };
 
+typedef void* GCThreadHandle;
+
 // Opaque type for tracking object pointers
 #ifndef DACCESS_COMPILE
 struct OBJECTHANDLE__
@@ -154,6 +156,18 @@ public:
         gc_reserved_1 = 0;
         gc_reserved_2 = 0;
         alloc_count = 0;
+    }
+
+    void bind(void* x)
+    {
+        gc_reserved_2 = x;
+    }
+
+    void* unbind()
+    {
+        void* temp = gc_reserved_2;
+        gc_reserved_2 = 0;
+        return temp;
     }
 };
 
@@ -522,6 +536,19 @@ public:
 // IGCHeap is the interface that the VM will use when interacting with the GC.
 class IGCHeap {
 public:
+
+    /*
+    ===========================================================================
+    Functions required by MMTk
+    ===========================================================================
+    */
+
+    // Binds the application threads to the GC
+    virtual GCThreadHandle BindThread(void* tls) = 0;
+
+    // Unbinds the application thread to the GC
+    virtual void UnbindThread(GCThreadHandle handle) = 0;
+
     /*
     ===========================================================================
     Hosting APIs. These are used by GC hosting. The code that

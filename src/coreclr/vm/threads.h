@@ -4482,6 +4482,11 @@ public:
         return m_pIOCompletionContext;
     }
 
+public:
+    // Binding and unbinding allocation information from GC
+    VOID BindAllocator();
+    VOID UnbindAllocator();
+
 private:
     // Inside a host, we don't own a thread handle, and we avoid DuplicateHandle call.
     // If a thread is dying after we obtain the thread handle, our SuspendThread may fail

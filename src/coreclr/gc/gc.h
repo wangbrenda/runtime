@@ -264,6 +264,7 @@ public:
     virtual ~IGCHeapInternal() {}
 
 public:
+
     virtual int GetNumberOfHeaps () = 0;
     virtual int GetHomeHeapNumber () = 0;
     virtual size_t GetPromotedBytes(int heap_index) = 0;
@@ -283,6 +284,16 @@ public:
     {
         return (cbSize >= 64*1024);
     }
+
+    GCThreadHandle BindThread(void* tls)
+    {
+        return nullptr;
+    }
+
+    void UnbindThread(GCThreadHandle handle)
+    {
+    }
+
 };
 
 // Go through and touch (read) each page straddled by a memory block.
