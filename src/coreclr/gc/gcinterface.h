@@ -4,9 +4,11 @@
 #ifndef _GC_INTERFACE_H_
 #define _GC_INTERFACE_H_
 
+#include <string.h>
+
 // The major version of the GC/EE interface. Breaking changes to this interface
 // require bumps in the major version number.
-#define GC_INTERFACE_MAJOR_VERSION 4
+#define GC_INTERFACE_MAJOR_VERSION 5 // Changed to support MMTk specifics
 
 // The minor version of the GC/EE interface. Non-breaking changes are required
 // to bump the minor version number. GCs and EEs with minor version number
@@ -130,6 +132,64 @@ typedef void (CALLBACK *HANDLESCANPROC)(PTR_UNCHECKED_OBJECTREF pref, uintptr_t 
 
 #include "gcinterface.ee.h"
 
+/////////////// Maybe should be moved to a different file //////////////////////////
+
+enum Allocator {
+    AllocatorDefault = 0,
+    AllocatorImmortal = 1,
+    AllocatorLos = 2,
+    AllocatorCode = 3,
+    AllocatorReadOnly = 4,
+};
+
+struct RustDynPtr {
+    void* data;
+    void* vtable;
+};
+
+// These constants should match the constants defind in mmtk::util::alloc::allocators
+const int MAX_BUMP_ALLOCATORS = 5;
+const int MAX_LARGE_OBJECT_ALLOCATORS = 1;
+
+// The following types should have the same layout as the types with the same name in MMTk core (Rust)
+
+struct BumpAllocator {
+    void* tls;
+    void* cursor;
+    void* limit;
+    RustDynPtr space;
+    void* plan;
+};
+
+struct LargeObjectAllocator {
+    void* tls;
+    void* space;
+    void* plan;
+};
+
+struct Allocators {
+    BumpAllocator bump_pointer[MAX_BUMP_ALLOCATORS];
+    LargeObjectAllocator large_object[MAX_LARGE_OBJECT_ALLOCATORS];
+};
+
+struct MutatorConfig {
+    void* allocator_mapping;
+    void* space_mapping;
+    RustDynPtr prepare_func;
+    RustDynPtr release_func;
+};
+
+struct MutatorContext {
+    Allocators allocators;
+    RustDynPtr barrier;
+    void* mutator_tls;
+    void* plan;
+    MutatorConfig config;
+};
+
+//////////////////////////////////
+
+
 // The allocation context must be known to the VM for use in the allocation
 // fast path and known to the GC for performing the allocation. Every Thread
 // has its own allocation context that it hands to the GC when allocating.
@@ -143,6 +203,9 @@ struct gc_alloc_context
     void*          gc_reserved_1;
     void*          gc_reserved_2;
     int            alloc_count;
+    // These fields are MMTk specific...
+    MutatorContext mmtk_context;
+
 public:
 
     void init()
@@ -156,17 +219,23 @@ public:
         gc_reserved_1 = 0;
         gc_reserved_2 = 0;
         alloc_count = 0;
+        mmtk_context = {};
     }
 
     void bind(void* x)
     {
-        gc_reserved_2 = x;
+        gc_reserved_1 = x;
+        if (x == nullptr) return;
+        // Set Block
+        memcpy (&mmtk_context, x, sizeof(mmtk_context));
+        gc_reserved_2 = &mmtk_context;
     }
 
     void* unbind()
     {
-        void* temp = gc_reserved_2;
+        void* temp = gc_reserved_1;
         gc_reserved_2 = 0;
+        gc_reserved_1 = 0;
         return temp;
     }
 };

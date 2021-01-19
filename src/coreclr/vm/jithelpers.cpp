@@ -2272,13 +2272,14 @@ HCIMPL1(Object*, JIT_NewS_MP_FastPortable, CORINFO_CLASS_HANDLE typeHnd_)
         _ASSERTE(size % DATA_ALIGNMENT == 0);
 
         gc_alloc_context *allocContext = thread->GetAllocContext();
-        BYTE *allocPtr = allocContext->alloc_ptr;
-        _ASSERTE(allocPtr <= allocContext->alloc_limit);
-        if (size > static_cast<SIZE_T>(allocContext->alloc_limit - allocPtr))
+        BYTE *allocPtr = (BYTE*) allocContext->mmtk_context.allocators.bump_pointer[0].cursor;
+        BYTE *allocLimit = (BYTE*) allocContext->mmtk_context.allocators.bump_pointer[0].limit;
+        _ASSERTE(allocPtr <= allocLimit);
+        if (size > static_cast<SIZE_T>(allocLimit - allocPtr))
         {
             break;
         }
-        allocContext->alloc_ptr = allocPtr + size;
+        allocContext->mmtk_context.allocators.bump_pointer[0].cursor = allocPtr + size;
 
         _ASSERTE(allocPtr != nullptr);
         Object *object = reinterpret_cast<Object *>(allocPtr);
@@ -2367,13 +2368,14 @@ HCIMPL1(StringObject*, AllocateString_MP_FastPortable, DWORD stringLength)
         totalSize = alignedTotalSize;
 
         gc_alloc_context *allocContext = thread->GetAllocContext();
-        BYTE *allocPtr = allocContext->alloc_ptr;
-        _ASSERTE(allocPtr <= allocContext->alloc_limit);
-        if (totalSize > static_cast<SIZE_T>(allocContext->alloc_limit - allocPtr))
+        BYTE *allocPtr = (BYTE*) allocContext->mmtk_context.allocators.bump_pointer[0].cursor;
+        BYTE *allocLimit = (BYTE*) allocContext->mmtk_context.allocators.bump_pointer[0].limit;
+        _ASSERTE(allocPtr <= allocLimit);
+        if (totalSize > static_cast<SIZE_T>(allocLimit - allocPtr))
         {
             break;
         }
-        allocContext->alloc_ptr = allocPtr + totalSize;
+        allocContext->mmtk_context.allocators.bump_pointer[0].cursor = allocPtr + totalSize;
 
         _ASSERTE(allocPtr != nullptr);
         StringObject *stringObject = reinterpret_cast<StringObject *>(allocPtr);
@@ -2534,13 +2536,14 @@ HCIMPL2(Object*, JIT_NewArr1VC_MP_FastPortable, CORINFO_CLASS_HANDLE arrayMT, IN
         totalSize = alignedTotalSize;
 
         gc_alloc_context *allocContext = thread->GetAllocContext();
-        BYTE *allocPtr = allocContext->alloc_ptr;
-        _ASSERTE(allocPtr <= allocContext->alloc_limit);
-        if (totalSize > static_cast<SIZE_T>(allocContext->alloc_limit - allocPtr))
+        BYTE *allocPtr = (BYTE*) allocContext->mmtk_context.allocators.bump_pointer[0].cursor;
+        BYTE *allocLimit = (BYTE*) allocContext->mmtk_context.allocators.bump_pointer[0].limit;
+        _ASSERTE(allocPtr <= allocLimit);
+        if (totalSize > static_cast<SIZE_T>(allocLimit - allocPtr))
         {
             break;
         }
-        allocContext->alloc_ptr = allocPtr + totalSize;
+        allocContext->mmtk_context.allocators.bump_pointer[0].cursor = allocPtr + totalSize;
 
         _ASSERTE(allocPtr != nullptr);
         ArrayBase *array = reinterpret_cast<ArrayBase *>(allocPtr);
@@ -2593,13 +2596,14 @@ HCIMPL2(Object*, JIT_NewArr1OBJ_MP_FastPortable, CORINFO_CLASS_HANDLE arrayMT, I
         _ASSERTE(ALIGN_UP(totalSize, DATA_ALIGNMENT) == totalSize);
 
         gc_alloc_context *allocContext = thread->GetAllocContext();
-        BYTE *allocPtr = allocContext->alloc_ptr;
-        _ASSERTE(allocPtr <= allocContext->alloc_limit);
-        if (totalSize > static_cast<SIZE_T>(allocContext->alloc_limit - allocPtr))
+        BYTE *allocPtr = (BYTE*) allocContext->mmtk_context.allocators.bump_pointer[0].cursor;
+        BYTE *allocLimit = (BYTE*) allocContext->mmtk_context.allocators.bump_pointer[0].limit;
+        _ASSERTE(allocPtr <= allocLimit);
+        if (totalSize > static_cast<SIZE_T>(allocLimit - allocPtr))
         {
             break;
         }
-        allocContext->alloc_ptr = allocPtr + totalSize;
+        allocContext->mmtk_context.allocators.bump_pointer[0].cursor = allocPtr + totalSize;
 
         _ASSERTE(allocPtr != nullptr);
         ArrayBase *array = reinterpret_cast<ArrayBase *>(allocPtr);
